@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="firebase-config.js"></script>
+    <script type="application/javascript" src="composeApp.js"></script>
+    <link type="text/css" rel="stylesheet" href="styles.css">
+
+    <title>CrossClip</title>
+</head>
+<body>
+
+<!-- Firebase v9 SDK using ES modules -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js';
+
+    // Initialize Firebase
+    if (window.firebaseConfig === undefined) {
+        throw new Error("Firebase configuration is not defined. Please ensure firebase-config.js is loaded correctly.");
+    }
+    const app = initializeApp(window.firebaseConfig);
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+
+    // Expose Firebase functions globally for Wasm-JS
+    window.firebase = {
+        app,
+        auth,
+        firestore,
+        GoogleAuthProvider: () => new GoogleAuthProvider()
+    };
+
+    // Expose Firebase functions as global functions
+    window.signInWithPopup = (auth, provider) => signInWithPopup(auth, provider);
+    window.signOut = () => signOut(auth);
+    window.collection = (path) => collection(firestore, path);
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.deleteDoc = deleteDoc;
+    window.doc = (path) => doc(firestore, path);
+    window.query = query;
+    window.where = where;
+    window.orderBy = orderBy;
+
+    // Add the new helper functions required by the updated repository
+    window.createEmptyObject = () => ({});
+    window.setObjectStringProperty = (obj, key, value) => { obj[key] = value; };
+    window.setObjectNumberProperty = (obj, key, value) => { obj[key] = value; };
+    window.getCurrentFirebaseUser = () => auth.currentUser;
+    window.stringToJsAny = (value) => value;
+    window.getWindow = () => window;
+</script>
+
+</body>
+</html>
