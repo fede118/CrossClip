@@ -43,7 +43,7 @@ jobs:
       # This step should use the newly created firebase-config.js
       - name: Build Web App
         run: |
-          # Example for a Kotlin/Wasm project
+          chmod +x ./gradlew
           ./gradlew wasmJsBrowserDistribution 
           # Or for a Node.js project:
           # npm install
