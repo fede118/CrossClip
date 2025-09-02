@@ -1,5 +1,4 @@
 package com.section11.crossclip.data.repository
-import com.section11.crossclip.data.repository.SharedStringsRepository
 import com.section11.crossclip.domain.models.SharedString
 import com.section11.crossclip.domain.models.User
 import kotlinx.coroutines.await
@@ -9,10 +8,10 @@ import kotlin.js.Promise
 @JsName("Object")
 external class JSObject : JsAny
 
+external interface FirebaseAuth
+external interface GoogleAuthProvider
 external interface FirebaseApp : JsAny
-external interface FirebaseAuth : JsAny
 external interface Firestore : JsAny
-external interface GoogleAuthProvider : JsAny
 external interface UserCredential : JsAny
 external interface FirebaseUser : JsAny
 external interface DocumentReference : JsAny
@@ -21,19 +20,6 @@ external interface DocumentSnapshot : JsAny
 external interface CollectionReference : JsAny
 external interface Query : JsAny
 external interface QueryConstraint : JsAny
-
-// Firebase global object
-external interface FirebaseGlobal : JsAny {
-    val app: FirebaseApp
-    val auth: FirebaseAuth
-    val firestore: Firestore
-    fun GoogleAuthProvider(): GoogleAuthProvider
-}
-
-// Window interface to access Firebase
-external interface WindowWithFirebase : JsAny {
-    val firebase: FirebaseGlobal
-}
 
 // External function declarations
 @JsName("signInWithPopup")
@@ -99,10 +85,6 @@ external interface JsDocumentReference : JsAny {
     val id: String
 }
 
-// Global window access - only allowed usage of js()
-@JsName("getWindow")
-external fun getWindow(): WindowWithFirebase
-
 // Helper functions using external declarations instead of js()
 @JsName("createEmptyObject")
 external fun createEmptyObject(): JsAny
@@ -137,14 +119,10 @@ fun createDocumentData(
     return obj
 }
 
-// Get Firebase from global window
-fun getFirebase(): FirebaseGlobal {
-    return getWindow().firebase
-}
-
-class WasmJsFirebaseRepository : SharedStringsRepository {
-
-    private val firebase = getFirebase()
+class WasmJsFirebaseRepository(
+    private val firebaseAuth: FirebaseAuth,
+    private val googleAuthProvider: GoogleAuthProvider,
+) : SharedStringsRepository {
 
     override suspend fun addSharedString(sharedString: SharedString): Result<String> {
         return try {
@@ -210,8 +188,7 @@ class WasmJsFirebaseRepository : SharedStringsRepository {
 
     override suspend fun signInWithGoogle(): Result<User> {
         return try {
-            val provider = firebase.GoogleAuthProvider()
-            val result = signInWithPopup(firebase.auth, provider).await<UserCredential>()
+            val result = signInWithPopup(firebaseAuth, googleAuthProvider).await<UserCredential>()
             val jsResult = result.unsafeCast<JsUserCredential>()
             val firebaseUser = jsResult.user
 

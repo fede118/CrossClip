@@ -1,41 +1,36 @@
 package com.section11.crossclip.ui.composable
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.section11.crossclip.data.repository.AndroidFirebaseRepository
-import com.section11.crossclip.ui.viewmodel.ShareViewModel
+import com.section11.crossclip.ui.viewmodel.MainViewModel.ShareUiEvents
+import com.section11.crossclip.ui.viewmodel.MainViewModel.ShareUiEvents.OnDismiss
+import com.section11.crossclip.ui.viewmodel.MainViewModel.ShareUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCrossClipScreen(
+    uiState: ShareUiState,
     modifier: Modifier = Modifier,
-    onDismiss: () -> Unit
+    onShareUiEvent: (ShareUiEvents) -> Unit
 ) {
-    val context = LocalContext.current
-    // todo move viewModel creation
-    val viewModel = remember {
-        ShareViewModel(
-            AndroidFirebaseRepository(
-                context = context,
-                credentialManager = CredentialManager.create(context),
-                firebaseAuth = FirebaseAuth.getInstance(),
-                firestore = FirebaseFirestore.getInstance(),
-            )
-        )
-    }
-    val uiState by viewModel.uiState.collectAsState()
-
-    if (uiState.onDismiss) {
-        onDismiss()
-    }
 
     Column(
         modifier = modifier.padding(24.dp),
@@ -57,7 +52,7 @@ fun AddCrossClipScreen(
 
                 OutlinedTextField(
                     value = uiState.textToShare,
-                    onValueChange = { viewModel.updateText(it) },
+                    onValueChange = { onShareUiEvent(ShareUiEvents.OnTextChange(it)) },
                     label = { Text("Text to share") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
@@ -69,12 +64,12 @@ fun AddCrossClipScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = { viewModel.onCancel() }) {
+                    TextButton(onClick = { onShareUiEvent(OnDismiss) }) {
                         Text("Cancel")
                     }
 
                     Button(
-                        onClick = { viewModel.saveSharedString() },
+                        onClick = { onShareUiEvent(ShareUiEvents.OnSaveTap) },
                         enabled = !uiState.isLoading && uiState.textToShare.isNotBlank()
                     ) {
                         if (uiState.isLoading) {
@@ -91,7 +86,7 @@ fun AddCrossClipScreen(
                 if (uiState.error != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = uiState.error.orEmpty(),
+                        text = uiState.error,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
