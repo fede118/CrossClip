@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.section11.crossclip.domain.models.SharedString
 import com.section11.crossclip.domain.models.User
 import com.section11.crossclip.data.repository.SharedStringsRepository
+import com.section11.crossclip.framework.utils.DeviceInfo
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.DismissAddStringScreen
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnAddStringTapped
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnDeleteString
@@ -15,13 +16,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
-class MainViewModel(
-    private val repository: SharedStringsRepository
-) : ViewModel() {
+class MainViewModel(private val repository: SharedStringsRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+
+    private val _shareUiState = MutableStateFlow(ShareUiState())
+    val shareUiState: StateFlow<ShareUiState> = _shareUiState.asStateFlow()
 
     init {
         checkCurrentUser()
@@ -133,6 +137,56 @@ class MainViewModel(
         _uiState.value = _uiState.value.copy(showAddScreen = true)
     }
 
+    fun onShareUiEvent(shareUiEvents: ShareUiEvents) {
+        when (shareUiEvents) {
+            is ShareUiEvents.OnTextChange -> updateText(shareUiEvents.newText)
+            is ShareUiEvents.OnSaveTap -> saveSharedString()
+            is ShareUiEvents.OnDismiss -> _uiState.value = _uiState.value.copy(showAddScreen = false)
+        }
+    }
+
+    private fun updateText(text: String) {
+        _shareUiState.value = _shareUiState.value.copy(textToShare = text)
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun saveSharedString() {
+        viewModelScope.launch {
+            _shareUiState.value = _shareUiState.value.copy(isLoading = true, error = null)
+
+            val user = repository.getCurrentUser().getOrNull()
+            if (user == null) {
+                _shareUiState.value = _shareUiState.value.copy(
+                    isLoading = false,
+                    error = "Please sign in first"
+                )
+                return@launch
+            }
+
+            val sharedString = SharedString(
+                content = _shareUiState.value.textToShare,
+                timestamp = Clock.System.now().toEpochMilliseconds(),
+                userId = user.id,
+                deviceInfo = DeviceInfo.getDeviceInfo()
+            )
+
+            repository.addSharedString(sharedString)
+                .onSuccess {
+                    _shareUiState.value = _shareUiState.value.copy(textToShare = "", isLoading = false)
+                    _uiState.value = _uiState.value.copy(showAddScreen = false)
+                    //todo: show snackbar
+                }
+                .onFailure { error ->
+                    _shareUiState.value = _shareUiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+
+            refreshSharedStrings()
+        }
+    }
+
     sealed class MainUiEvents {
         data object OnSignOut : MainUiEvents()
         data object OnSignIn : MainUiEvents()
@@ -150,4 +204,16 @@ class MainViewModel(
         val retryAction: (() -> Unit)? = null,
         val showAddScreen: Boolean = false
     )
+
+    data class ShareUiState(
+        val textToShare: String = "",
+        val isLoading: Boolean = false,
+        val error: String? = null
+    )
+
+    sealed class ShareUiEvents {
+        data class OnTextChange(val newText: String) : ShareUiEvents()
+        data object OnSaveTap : ShareUiEvents()
+        data object OnDismiss : ShareUiEvents()
+    }
 }

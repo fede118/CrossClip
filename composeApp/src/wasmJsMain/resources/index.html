@@ -27,7 +27,7 @@
     const firestore = getFirestore(app);
 
     // Expose Firebase functions globally for Wasm-JS
-    window.firebase = {
+    window.firebaseApi = {
         app,
         auth,
         firestore,
