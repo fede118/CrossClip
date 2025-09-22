@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This XML file defines a drawable for the adaptive icon background. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- The gradient tag defines the colors and direction of the fade. -->
+    <!-- The colors transition from a vibrant blue to a vibrant green. -->
+    <gradient
+        android:startColor="#00ff8e"
+        android:endColor="#00c6ff"
+        android:angle="90"
+        android:type="linear" />
+
+</shape>
