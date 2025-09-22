@@ -28,6 +28,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.section11.crossclip.domain.models.SharedString
 import com.section11.crossclip.ui.dimens.DefaultPadding
 import com.section11.crossclip.ui.theme.CrossClipTheme
+import com.section11.crossclip.ui.viewmodel.MainViewModel
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.DismissAddStringScreen
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnAddStringTapped
@@ -40,7 +41,9 @@ import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiState
 @Composable
 fun CrossClipComposableApp(
     uiState: MainUiState,
-    onUiEvent: (MainUiEvents) -> Unit
+    shareUiState: MainViewModel.ShareUiState,
+    onUiEvent: (MainUiEvents) -> Unit,
+    onShareUiEvent: (MainViewModel.ShareUiEvents) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -117,10 +120,10 @@ fun CrossClipComposableApp(
                             properties = DialogProperties(dismissOnClickOutside = true)
                         ) {
                             AddCrossClipScreen(
-                                Modifier.fillMaxSize()
-                            ) {
-                                onUiEvent(DismissAddStringScreen)
-                            }
+                                shareUiState,
+                                Modifier.fillMaxSize(),
+                                onShareUiEvent
+                            )
                         }
                     }
                 }
@@ -145,7 +148,9 @@ fun CrossClipComposableAppPreview(modifier: Modifier = Modifier) {
                 ) },
                 showAddScreen = false
             ),
-            onUiEvent = { }
+            onUiEvent = { },
+            shareUiState = MainViewModel.ShareUiState(),
+            onShareUiEvent = {}
         )
     }
 }

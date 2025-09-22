@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">CrossClip</string>
+
+    <!--  ShareClip Screen Strings  -->
+    <string name="sign_in_prompt">Sign in to view your shared strings</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="your_clips_count">Your Clips (%1$d)</string>
+    <string name="refresh_content_description">Refresh</string>
+    <string name="add_shared_string_button">Add shared string</string>
+    <string name="cross_clip_shared_string_label">CrossClip Shared String</string>
+    <string name="copied_to_clipboard_message">Copied to clipboard: %1$s&#8230;</string>
+    <string name="delete_content_description">Delete</string>
 </resources>

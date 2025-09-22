@@ -30,10 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.section11.crossclip.R
 import com.section11.crossclip.domain.models.SharedString
 import com.section11.crossclip.ui.dimens.DefaultPadding
+import com.section11.crossclip.ui.theme.CrossClipTheme
 import com.section11.crossclip.ui.theme.LocalSnackbarHostState
 import com.section11.crossclip.ui.viewmodel.formatTimestamp
 import kotlinx.coroutines.launch
@@ -50,7 +54,7 @@ fun SignInScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Sign in to view your shared strings",
+            text = stringResource(R.string.sign_in_prompt),
             style = MaterialTheme.typography.headlineSmall
         )
         Spacer(modifier = Modifier.height(32.dp))
@@ -59,7 +63,7 @@ fun SignInScreen(
             CircularProgressIndicator()
         } else {
             Button(onClick = onSignIn) {
-                Text("Sign in with Google")
+                Text(stringResource(R.string.sign_in_with_google))
             }
         }
     }
@@ -81,7 +85,7 @@ fun SharedStringsListScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Your Clips (${sharedStrings.size})",
+                text = stringResource(R.string.your_clips_count, sharedStrings.size),
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -92,7 +96,7 @@ fun SharedStringsListScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_content_description))
                 }
             }
         }
@@ -111,7 +115,7 @@ fun SharedStringsListScreen(
                 Button(
                     modifier = Modifier.fillMaxWidth().padding(DefaultPadding),
                     onClick =  { onAddTap() }
-                ) { Text("Add shared string") }
+                ) { Text(stringResource(R.string.add_shared_string_button)) }
             }
         }
     }
@@ -128,19 +132,21 @@ fun SharedStringItem(
     val coroutineScope = rememberCoroutineScope()
     val snackBarHost = LocalSnackbarHostState.current
 
+    val sharedStringLabel = stringResource(R.string.cross_clip_shared_string_label)
+    val snackbarMessage = stringResource(R.string.copied_to_clipboard_message, sharedString.content.take(30))
     Card(
         modifier = modifier.clickable {
             coroutineScope.launch {
                 clipboardManager.setClipEntry(
                     ClipEntry(
                         ClipData(
-                            "CrossClip Shared String",
+                            sharedStringLabel,
                             arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN),
                             ClipData.Item(AnnotatedString(sharedString.content))
                         )
                     )
                 )
-                snackBarHost.showSnackbar("Copied to clipboard: ${sharedString.content.take(30)}...")
+                snackBarHost.showSnackbar(snackbarMessage)
             }
         }
     ) {
@@ -159,7 +165,7 @@ fun SharedStringItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(
                         text = formatTimestamp(sharedString.timestamp),
                         style = MaterialTheme.typography.bodySmall,
@@ -175,11 +181,43 @@ fun SharedStringItem(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(R.string.delete_content_description),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, device = "id:pixel_9")
+@Composable
+fun SharedStringsListScreenPreview_Empty() {
+    CrossClipTheme {
+        SharedStringsListScreen(
+            sharedStrings = emptyList(),
+            isLoading = false,
+            onRefresh = {},
+            onDelete = {},
+            onAddTap = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SharedStringsListScreenPreview_WithItems() {
+    CrossClipTheme {
+        SharedStringsListScreen(
+            sharedStrings = listOf(
+                SharedString("1", "Hello", 1678886400000, "Android"),
+                SharedString("2", "World", 1678886400000, "Android"),
+                SharedString("3", "This is a longer string to see how it wraps", 1678886400000, "Desktop", deviceInfo = "Windows (Web)Mozilla/5.0 (Windows NT 10.0, Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36")
+            ),
+            isLoading = false,
+            onRefresh = {},
+            onDelete = {},
+            onAddTap = {}
+        )
     }
 }
