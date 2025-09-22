@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.androidx.ui.tooling.preview)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
+            implementation(libs.androidx.ui.tooling)
 
         }
         commonMain.dependencies {

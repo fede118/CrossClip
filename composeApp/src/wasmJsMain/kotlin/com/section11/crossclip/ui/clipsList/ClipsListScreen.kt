@@ -125,11 +125,7 @@ fun ClipsWebListScreen(
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Share some text from your Android device to see it here!",
-                        color = Color(0xFF6B7280),
-                        textAlign = TextAlign.Center
-                    )
+                    AddItemComposable(shareUiState, Modifier.padding(24.dp), onShareUiEvents)
                 }
             } else {
                 LazyColumn(

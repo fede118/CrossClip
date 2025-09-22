@@ -9,6 +9,7 @@ import com.section11.crossclip.framework.utils.DeviceInfo
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.DismissAddStringScreen
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnAddStringTapped
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnDeleteString
+import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnIntentWithString
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnRefreshSharedStrings
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnSignIn
 import com.section11.crossclip.ui.viewmodel.MainViewModel.MainUiEvents.OnSignOut
@@ -63,7 +64,12 @@ class MainViewModel(private val repository: SharedStringsRepository) : ViewModel
             is OnAddStringTapped -> handleAddStringTapped()
             is DismissAddStringScreen -> {
                 _uiState.value = _uiState.value.copy(showAddScreen = false)
+                _shareUiState.value = ShareUiState()
                 refreshSharedStrings()
+            }
+            is OnIntentWithString -> {
+                _uiState.value = _uiState.value.copy(showAddScreen = true)
+                _shareUiState.value = _shareUiState.value.copy(textToShare = mainUiEvents.sharedText)
             }
         }
     }
@@ -123,13 +129,12 @@ class MainViewModel(private val repository: SharedStringsRepository) : ViewModel
 
     private fun deleteSharedString(id: String) {
         viewModelScope.launch {
-            repository.deleteSharedString(id)
-                .onSuccess {
-                    refreshSharedStrings()
-                }
-                .onFailure { error ->
+            repository.deleteSharedString(id).fold(
+                onSuccess = { refreshSharedStrings() },
+                onFailure = { error ->
                     _uiState.value = _uiState.value.copy(error = error.message)
                 }
+            )
         }
     }
 
@@ -170,18 +175,19 @@ class MainViewModel(private val repository: SharedStringsRepository) : ViewModel
                 deviceInfo = DeviceInfo.getDeviceInfo()
             )
 
-            repository.addSharedString(sharedString)
-                .onSuccess {
+            repository.addSharedString(sharedString).fold(
+                onSuccess = {
                     _shareUiState.value = _shareUiState.value.copy(textToShare = "", isLoading = false)
                     _uiState.value = _uiState.value.copy(showAddScreen = false)
                     //todo: show snackbar
-                }
-                .onFailure { error ->
+                },
+                onFailure = { error ->
                     _shareUiState.value = _shareUiState.value.copy(
                         isLoading = false,
                         error = error.message
                     )
                 }
+            )
 
             refreshSharedStrings()
         }
@@ -194,6 +200,7 @@ class MainViewModel(private val repository: SharedStringsRepository) : ViewModel
         data object OnAddStringTapped : MainUiEvents()
         data class OnDeleteString(val deletedString: String) : MainUiEvents()
         data object DismissAddStringScreen : MainUiEvents()
+        data class OnIntentWithString(val sharedText: String) : MainUiEvents()
     }
 
     data class MainUiState(
